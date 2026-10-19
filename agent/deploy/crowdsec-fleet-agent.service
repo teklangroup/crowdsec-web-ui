@@ -1,0 +1,17 @@
+[Unit]
+Description=CrowdSec Web UI fleet agent
+After=network-online.target crowdsec.service
+Wants=network-online.target
+
+[Service]
+# Set FLEET_SERVER, FLEET_ENROLL_TOKEN and FLEET_TAGS here (and FLEET_CSCLI /
+# FLEET_RELOAD_CMD for Docker hosts). Remove the token after the first start.
+EnvironmentFile=/etc/crowdsec-fleet/agent.env
+ExecStart=/usr/local/bin/crowdsec-fleet-agent
+Restart=always
+RestartSec=10
+# Root is needed because cscli reads /etc/crowdsec and talks to the local API.
+StateDirectory=crowdsec-fleet
+
+[Install]
+WantedBy=multi-user.target

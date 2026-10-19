@@ -71,6 +71,13 @@
 #   append them to a dedicated file.
 #   logFile: /app/data/audit.log
 
+# fleet:
+#   Lets crowdsec-fleet agents on your CrowdSec hosts report health, versions,
+#   bouncers and hub items, and run queued actions (ban/unban, hub install,
+#   remove, update, upgrade, reload). Agents connect out to this UI, so hosts
+#   need no open ports. The enrollment token is shown on the Fleet page.
+#   enabled: false
+
 # crowdsec:
 #   simulationsEnabled: false
 #   Uncomment alertFilters to override the default non-CAPI feed.

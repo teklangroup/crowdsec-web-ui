@@ -15,6 +15,7 @@ const Dashboard = lazy(async () => ({ default: (await import('./pages/Dashboard'
 const Alerts = lazy(async () => ({ default: (await import('./pages/Alerts')).Alerts }));
 const Decisions = lazy(async () => ({ default: (await import('./pages/Decisions')).Decisions }));
 const Metrics = lazy(async () => ({ default: (await import('./pages/Metrics')).Metrics }));
+const Fleet = lazy(async () => ({ default: (await import('./pages/Fleet')).Fleet }));
 const Notifications = lazy(async () => ({ default: (await import('./pages/Notifications')).Notifications }));
 const Settings = lazy(async () => ({ default: (await import('./pages/Settings')).Settings }));
 const Login = lazy(async () => ({ default: (await import('./pages/Login')).Login }));
@@ -75,6 +76,14 @@ function ProtectedAppShell() {
             element={(
               <Suspense fallback={<RouteFallback />}>
                 <Metrics />
+              </Suspense>
+            )}
+          />
+          <Route
+            path="fleet"
+            element={(
+              <Suspense fallback={<RouteFallback />}>
+                <Fleet />
               </Suspense>
             )}
           />

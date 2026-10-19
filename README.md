@@ -32,6 +32,7 @@ A self-hosted dashboard for [CrowdSec](https://crowdsec.net/): investigate alert
 | Alerts | Searchable alert history, persistent count-aware quick filters, CrowdSec alert contexts, IP/AS/location details, event metadata, simulation labels, and configurable columns |
 | Decisions | Active and expired decisions, persistent count-aware quick filters, duplicate hiding, manual bans, custom durations, reasons, and cleanup actions |
 | Multi-instance | Several CrowdSec LAPIs, per-instance views, and a Combined scope for Dashboard, Alerts, and Decisions |
+| Fleet | Optional outbound-only host agents: health, versions, bouncers, hub collections, cross-host attackers, and fleet-wide ban, hub, and reload actions |
 | Metrics | Optional Prometheus views for LAPI activity, bouncers, AppSec, parsers, latency, parsing time, and whitelists |
 | Notifications | Alert, decision, CVE, availability, and update rules delivered through Email, Gotify, MQTT, ntfy, or Webhooks |
 | Security | Initial administrator setup, password and TOTP login, passkeys, OIDC SSO, group roles, and instance-wide read-only mode |
@@ -276,6 +277,12 @@ Outcomes are `success`, `partial`, `failure`, or `queued`. Alert deletions handl
 | --- | --- | --- | --- |
 | `audit.enabled` | `true` | Writes audit entries for user actions to the application log. | `CONFIG_AUDIT_ENABLED` |
 | `audit.logFile` | Unset | Also appends audit entries as JSON lines to this file. | `CONFIG_AUDIT_LOG_FILE` |
+
+Fleet actions are audited as `fleet.command` (`queued`), `fleet.host.remove`, and `fleet.enrollment.rotate`.
+
+| YAML field | Default | Purpose | Environment override |
+| --- | --- | --- | --- |
+| `fleet.enabled` | `false` | Enables the Fleet page and the agent endpoints. See [Fleet agents](#fleet-agents). | `CONFIG_FLEET_ENABLED` |
 
 ### Alert handling
 
@@ -529,6 +536,38 @@ instances:
 | Metrics | Defaults to a source-aware Combined view when the selected scope has multiple endpoints; individual endpoints remain selectable |
 | Add decision / clean IP | Runs against every LAPI in Combined scope and reports partial failures |
 | Row deletion | Uses the row's owning instance; numeric upstream IDs are never broadcast |
+
+## Fleet agents
+
+The Fleet page manages many CrowdSec hosts through a small agent on each one ([`agent/`](agent/README.md)). It complements LAPI instances: use instances to investigate alerts and decisions, and the fleet to keep the hosts themselves healthy and consistent.
+
+- **Outbound only.** Agents check in every 15 seconds over HTTPS, so hosts need no open ports and their LAPI does not have to be reachable from the Web UI.
+- **No remote shell.** The UI queues named actions (`ban`, `unban`, `hub_install`, `hub_remove`, `hub_update`, `hub_upgrade`, `reload`, `refresh`). The server and the agent both validate every parameter, and the agent runs a fixed `cscli` argument list without a shell.
+- **Per-host keys.** A shared enrollment token is used once; each host then has its own key. Removing a host revokes it, and rotating the token blocks new enrollments without affecting enrolled hosts.
+- **Roles.** Read-only users can view the fleet. `ban` and `unban` need enforcement rights; hub actions, reloads, host removal, and the enrollment token need settings rights.
+
+| Fleet page area | What it shows |
+| --- | --- |
+| Summary tiles | Hosts online, hosts needing attention, active decisions, recent alerts, bouncers that stopped pulling, and pending hub updates |
+| Hosts | Status (healthy, degraded, LAPI down, offline), tags, CrowdSec version, counts, and a host detail view with decisions, alerts, bouncers, machines, collections, and collection errors |
+| Attackers across the fleet | Sources detected on more than one host, where they are already banned, and a one-click ban on every host |
+| CrowdSec versions | Version spread across hosts |
+| Activity | Every queued action with each host's result and `cscli` output |
+
+### Enable and enroll
+
+1. Set `fleet.enabled: true` (or `CONFIG_FLEET_ENABLED=true`) and restart.
+2. Open **Fleet → Add host** to copy the enrollment token and the agent command.
+3. On each host, build or copy the agent and run it once with the token. To run it as a service, use the systemd unit in [`agent/deploy`](agent/deploy).
+
+```bash
+cd agent && make release   # dist/crowdsec-fleet-agent-linux-{amd64,arm64,armv7}
+sudo crowdsec-fleet-agent -server https://crowdsec.example.com -enroll-token <token> -tags prod,web -instance web01
+```
+
+For CrowdSec in Docker, add `-cscli "docker exec crowdsec cscli" -reload-cmd "docker restart crowdsec"`. `-instance` optionally links the host to a configured LAPI instance so the Fleet page can open its alerts.
+
+Agent check-ins do not count as user activity, so they never keep LAPI synchronization out of its idle cadence.
 
 ## Authentication
 

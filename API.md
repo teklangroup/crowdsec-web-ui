@@ -119,7 +119,7 @@ These routes are mounted below `/api/auth`. Auth setup/login routes are availabl
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| GET | `/api/config` | Runtime UI config, LAPI status, sync status, simulation setting, time settings, manual refresh availability, metrics availability, metrics sidebar preference, permissions, each instance's effective manual decision scenarios (`manual_decision_scenarios`), and the configured and Settings-managed scenario lists (`manual_decision_scenario_settings`). |
+| GET | `/api/config` | Runtime UI config, LAPI status, sync status, simulation setting, time settings, manual refresh availability, metrics availability, metrics sidebar preference, whether fleet management is enabled (`fleet_enabled`), permissions, each instance's effective manual decision scenarios (`manual_decision_scenarios`), and the configured and Settings-managed scenario lists (`manual_decision_scenario_settings`). |
 | GET | `/api/instances` | Configured instance identities, LAPI and synchronization status, metrics endpoint identities, per-instance overrides, effective manual decision scenarios (`manual_decision_scenarios`), and aggregate availability. |
 | PUT | `/api/config/metrics-sidebar` | Save the metrics sidebar preference. Body: `{ "visible": true }`. |
 | PUT | `/api/config/refresh-interval` | Update the refresh interval. Body: `{ "interval": "manual" \| "0" \| "5s" \| "30s" \| "1m" \| "5m" }`. Blocked in read-only mode. |
@@ -256,6 +256,22 @@ The response includes `fetched_at`, `totals`, `bouncers`, `machines`, `parserSou
 Parser node entries include `isChild`, which is `true` for CrowdSec child parser nodes emitted with the `child-` prefix.
 
 Parser, LAPI latency, AppSec, bouncer, and machine values are derived from the current CrowdSec Prometheus scrape. The endpoint does not query Prometheus history or calculate Grafana-style `rate()`/`increase()` windows, so metrics that require time-window tracking are intentionally omitted.
+
+## Fleet
+
+Registered only when `fleet.enabled` is `true`. Types are defined in `shared/fleet.ts`.
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| GET | `/api/fleet` | Host summaries and the fleet overview: online and attention counts, decision, alert, bouncer and hub-update totals, CrowdSec versions, tags, and `top_sources` (detections seen across hosts, with `hosts` and `banned_on`). |
+| GET | `/api/fleet/hosts/:id` | One host's summary plus its latest `snapshot` (decisions, alerts, bouncers, machines, collections, errors). |
+| DELETE | `/api/fleet/hosts/:id` | Remove a host and revoke its agent key. Needs settings rights. |
+| GET | `/api/fleet/commands` | The latest 100 actions with each host's `state` (`queued`, `sent`, `ok`, `failed`, `expired`) and output. |
+| POST | `/api/fleet/commands` | Queue an action. Body: `{ "action": "ban", "targets": ["all" \| "tag:<tag>" \| "<host id>"], "params": { "target": "192.0.2.1", "duration": "4h", "reason": "..." } }`. `ban`/`unban` need enforcement rights; other actions need settings rights. Queued actions expire after 24 hours. |
+| GET | `/api/fleet/enrollment` | Return the agent enrollment token, creating it on first use. Needs settings rights. |
+| POST | `/api/fleet/enrollment/rotate` | Replace the enrollment token. Enrolled hosts keep working. Needs settings rights. |
+| POST | `/api/fleet/agent/enroll` | Agent only. Body: `{ "token", "hostname", "tags", "instance" }`. Returns `{ "agent_id", "key" }`. |
+| POST | `/api/fleet/agent/checkin` | Agent only, `Authorization: Bearer <key>`. Sends status, an optional `snapshot`, and command `results`; returns queued `commands`. |
 
 ## Cache Update WebSocket
 

@@ -142,6 +142,19 @@ describe('configuration overrides', () => {
     }
   });
 
+  test('keeps fleet disabled by default and applies CONFIG_FLEET_ENABLED', () => {
+    const generatedConfigFile = createMissingConfigPath();
+    expect(createRuntimeConfigImpl({}, { defaultConfigFile: generatedConfigFile }).fleetEnabled).toBe(false);
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const config = createRuntimeConfigImpl({ CONFIG_FLEET_ENABLED: 'true' }, { defaultConfigFile: generatedConfigFile });
+      expect(config.fleetEnabled).toBe(true);
+      expect(log).toHaveBeenCalledWith('  CONFIG_FLEET_ENABLED -> fleet.enabled: <unset> -> true');
+    } finally {
+      log.mockRestore();
+    }
+  });
+
   test('persists CONFIG_ values to an existing YAML when explicitly enabled', () => {
     const generatedConfigFile = createMissingConfigPath();
     createRuntimeConfigImpl({ CONFIG_SERVER_PORT: '4100' }, { defaultConfigFile: generatedConfigFile });

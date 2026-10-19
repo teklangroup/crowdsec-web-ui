@@ -5,6 +5,7 @@ import type {
   SyncStatus,
 } from '../../shared/contracts';
 import type { SearchNode } from '../../shared/search';
+import { isFleetAgentPath } from '../fleet';
 import type { RuntimeConfig } from '../config';
 import type { AlertInsertParams, CrowdsecDatabase, DecisionInsertParams } from '../database';
 import type { LapiClient } from '../lapi';
@@ -2274,7 +2275,8 @@ function stopHeartbeatScheduler(logStop = true): void {
 
 async function activityTrackerMiddleware(context: HonoContext, next: HonoNext): Promise<void> {
   const pathname = new URL(context.req.url).pathname;
-  if (pathname === '/api/health' || pathname === `${config.basePath}/api/health`) {
+  // Health probes and fleet agent check-ins are machine traffic, not user activity.
+  if (pathname === '/api/health' || pathname === `${config.basePath}/api/health` || isFleetAgentPath(pathname, config.basePath)) {
     await next();
     return;
   }
