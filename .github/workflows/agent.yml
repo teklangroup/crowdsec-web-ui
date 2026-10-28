@@ -1,0 +1,35 @@
+name: Fleet agent
+
+on:
+  push:
+    paths:
+      - 'agent/**'
+      - '.github/workflows/agent.yml'
+  pull_request:
+    paths:
+      - 'agent/**'
+      - '.github/workflows/agent.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agent
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      # Uses the Go toolchain preinstalled on GitHub's Ubuntu runners.
+      - name: Vet and test
+        run: |
+          go version
+          test -z "$(gofmt -l .)"
+          go vet ./...
+          go test ./...
+
+      - name: Build release binaries
+        run: make release

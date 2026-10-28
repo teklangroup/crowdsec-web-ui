@@ -20,3 +20,7 @@ frontend/coverage
 client/coverage
 /dist
 /geonames
+
+# Fleet agent build output
+agent/bin/
+agent/dist/

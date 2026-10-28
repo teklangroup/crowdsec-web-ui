@@ -30,6 +30,13 @@ import type {
   UpsertNotificationChannelRequest,
   UpsertNotificationRuleRequest,
 } from '../types';
+import type {
+  CreateFleetCommandRequest,
+  FleetCommand,
+  FleetEnrollmentResponse,
+  FleetHostDetail,
+  FleetResponse,
+} from '../../../shared/fleet';
 import { apiUrl } from './basePath';
 import { sessionFetch } from './sessionFetch';
 
@@ -502,4 +509,36 @@ export async function bulkDeleteNotifications(ids: BulkDeleteRequest['ids']): Pr
 
 export async function deleteReadNotifications(): Promise<void> {
     await sendJson('/api/notifications/delete-read', { method: 'POST' }, 'Failed to delete read notifications');
+}
+
+export async function fetchFleet(): Promise<FleetResponse> {
+    return fetchJson<FleetResponse>('/api/fleet', undefined, 'Failed to fetch fleet');
+}
+
+export async function fetchFleetHost(id: string): Promise<FleetHostDetail> {
+    return fetchJson<FleetHostDetail>(`/api/fleet/hosts/${encodeURIComponent(id)}`, undefined, 'Failed to fetch host');
+}
+
+export async function deleteFleetHost(id: string): Promise<void> {
+    await sendJson(`/api/fleet/hosts/${encodeURIComponent(id)}`, { method: 'DELETE' }, 'Failed to remove host');
+}
+
+export async function fetchFleetCommands(): Promise<FleetCommand[]> {
+    return fetchJson<FleetCommand[]>('/api/fleet/commands', undefined, 'Failed to fetch fleet activity');
+}
+
+export async function createFleetCommand(data: CreateFleetCommandRequest): Promise<FleetCommand> {
+    return sendJson<FleetCommand>('/api/fleet/commands', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    }, 'Failed to queue fleet action');
+}
+
+export async function fetchFleetEnrollment(): Promise<FleetEnrollmentResponse> {
+    return sendJson<FleetEnrollmentResponse>('/api/fleet/enrollment', { method: 'GET' }, 'Failed to fetch enrollment token');
+}
+
+export async function rotateFleetEnrollment(): Promise<FleetEnrollmentResponse> {
+    return sendJson<FleetEnrollmentResponse>('/api/fleet/enrollment/rotate', { method: 'POST' }, 'Failed to rotate enrollment token');
 }

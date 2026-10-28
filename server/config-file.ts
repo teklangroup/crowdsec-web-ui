@@ -184,7 +184,7 @@ function applySecretReference(
 
 export function parseApplicationConfig(parsed: unknown, sourceEnv: NodeJS.ProcessEnv): ParsedConfigFile {
   const root = record(parsed, 'config');
-  knownKeys(root, ['server', 'storage', 'ui', 'auth', 'notifications', 'audit', 'updates', 'crowdsec', 'instances'], 'root');
+  knownKeys(root, ['server', 'storage', 'ui', 'auth', 'notifications', 'audit', 'fleet', 'updates', 'crowdsec', 'instances'], 'root');
 
   const env: NodeJS.ProcessEnv = {};
   for (const name of RETAINED_METADATA_ENV) {
@@ -255,6 +255,10 @@ export function parseApplicationConfig(parsed: unknown, sourceEnv: NodeJS.Proces
   knownKeys(audit, ['enabled', 'logFile'], 'audit');
   setBoolean(env, audit, 'enabled', 'AUDIT_ENABLED', 'audit');
   setString(env, audit, 'logFile', 'AUDIT_LOG_FILE', 'audit', true);
+
+  const fleet = section(root, 'fleet');
+  knownKeys(fleet, ['enabled'], 'fleet');
+  setBoolean(env, fleet, 'enabled', 'FLEET_ENABLED', 'fleet');
 
   const updates = section(root, 'updates');
   knownKeys(updates, ['enabled'], 'updates');
@@ -349,7 +353,7 @@ const INITIAL_CONFIG_HEADER = [
 ] as const;
 
 export const CONFIG_KEY_ORDER = new Map<string, readonly string[]>([
-  ['', ['server', 'storage', 'ui', 'updates', 'auth', 'notifications', 'audit', 'crowdsec', 'instances']],
+  ['', ['server', 'storage', 'ui', 'updates', 'auth', 'notifications', 'audit', 'fleet', 'crowdsec', 'instances']],
   ['server', ['port', 'basePath']],
   ['storage', [
     'dataDir', 'geonamesDir', 'walEnabled', 'incrementalVacuumEnabled', 'journalSizeLimit',
@@ -362,6 +366,7 @@ export const CONFIG_KEY_ORDER = new Map<string, readonly string[]>([
   ['auth.oidc', ['issuerUrl', 'clientId', 'clientSecret', 'scope', 'groupsClaim', 'adminGroups', 'readOnlyGroups', 'unmatchedRole', 'endSession']],
   ['notifications', ['secretKey', 'allowPrivateAddresses', 'debugPayloads']],
   ['audit', ['enabled', 'logFile']],
+  ['fleet', ['enabled']],
   ['crowdsec', ['simulationsEnabled', 'alertFilters', 'manualDecisions', 'sync']],
   ['crowdsec.alertFilters', ['includeOrigins', 'excludeOrigins', 'includeCapi', 'includeOriginEmpty', 'excludeOriginEmpty', 'legacy']],
   ['crowdsec.alertFilters.legacy', ['origins', 'extraScenarios']],
@@ -463,6 +468,7 @@ const LEGACY_GENERATED_CONFIG_PATHS = [
   ['CROWDSEC_AUTH_OIDC_UNMATCHED_ROLE', ['auth', 'oidc', 'unmatchedRole']],
   ['NOTIFICATION_SECRET_KEY', ['notifications', 'secretKey']],
   ['NOTIFICATION_SECRET_KEY_FILE', ['notifications', 'secretKey']],
+  ['FLEET_ENABLED', ['fleet', 'enabled']],
   ['NOTIFICATION_ALLOW_PRIVATE_ADDRESSES', ['notifications', 'allowPrivateAddresses']],
   ['NOTIFICATION_DEBUG_PAYLOADS', ['notifications', 'debugPayloads']],
   ['CROWDSEC_SIMULATIONS_ENABLED', ['crowdsec', 'simulationsEnabled']],
@@ -587,6 +593,7 @@ export function generateApplicationConfig(env: NodeJS.ProcessEnv, config: Runtim
       enabled: config.auditEnabled,
       ...(config.auditLogFile ? { logFile: config.auditLogFile } : {}),
     },
+    fleet: { enabled: config.fleetEnabled },
     updates: { enabled: config.updateCheckEnabled },
     crowdsec: {
       simulationsEnabled: config.simulationsEnabled,
@@ -640,6 +647,7 @@ const CONFIG_SECTION_ENV = [
   ['CONFIG_AUTH', ['auth']],
   ['CONFIG_NOTIFICATIONS', ['notifications']],
   ['CONFIG_AUDIT', ['audit']],
+  ['CONFIG_FLEET', ['fleet']],
   ['CONFIG_UPDATES', ['updates']],
   ['CONFIG_CROWDSEC', ['crowdsec']],
   ['CONFIG_INSTANCES', ['instances']],
@@ -673,6 +681,7 @@ const CONFIG_VALUE_ENV = [
   ['CONFIG_NOTIFICATIONS_DEBUG_PAYLOADS', ['notifications', 'debugPayloads']],
   ['CONFIG_AUDIT_ENABLED', ['audit', 'enabled']],
   ['CONFIG_AUDIT_LOG_FILE', ['audit', 'logFile']],
+  ['CONFIG_FLEET_ENABLED', ['fleet', 'enabled']],
   ['CONFIG_UPDATES_ENABLED', ['updates', 'enabled']],
   ['CONFIG_CROWDSEC_SIMULATIONS_ENABLED', ['crowdsec', 'simulationsEnabled']],
   ['CONFIG_CROWDSEC_ALERT_FILTERS_INCLUDE_ORIGINS', ['crowdsec', 'alertFilters', 'includeOrigins']],

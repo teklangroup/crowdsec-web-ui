@@ -65,6 +65,7 @@ import { parseGoDuration, toDuration } from './utils/duration';
 import { fetchCrowdsecMetrics, fetchCrowdsecMetricsSamples, summarizeCrowdsecMetrics } from './metrics';
 import { DatabaseQueryWorker, QueryWorkerTimeoutError } from './query-worker-client';
 import { registerApiRoutes } from './app/api-routes';
+import { registerFleetRoutes } from './fleet';
 import { registerSavedFilterRoutes } from './app/saved-filters';
 import { registerBrandingRoutes } from './app/branding-routes';
 import { applyBrandingToIndexHtml, getPublicBranding, serializeBrandingForScript } from './branding';
@@ -864,6 +865,7 @@ export function createApp(options: CreateAppOptions = {}): AppController {
   Dashboard Auth: ${dashboardAuth.enabled ? 'Enabled' : 'Disabled'}
   Dashboard OIDC: ${dashboardAuth.oidcEnabled ? 'Enabled' : 'Disabled'}
   Read-only Mode: ${config.readOnly ? 'Enabled' : 'Disabled'}
+  Fleet Agents: ${config.fleetEnabled ? 'Enabled' : 'Disabled'}
   Audit Log: ${config.auditEnabled ? `Enabled${config.auditLogFile ? ` (file: ${config.auditLogFile})` : ''}` : 'Disabled'}
 `);
 
@@ -1261,6 +1263,20 @@ export function createApp(options: CreateAppOptions = {}): AppController {
     if (dashboardAuth.getPermissions(context).can_manage_settings) return null;
     return context.json({ error: 'Read-only mode is enabled', code: 'READ_ONLY' }, 403);
   };
+
+  if (config.fleetEnabled) {
+    registerFleetRoutes({
+      app,
+      basePath: config.basePath,
+      database,
+      auth: dashboardAuth,
+      auditLog,
+      instanceIds: config.instances.map((instance) => instance.id),
+      writeDatabase: (operation) => syncWorker.runExclusive(operation),
+      ensureCanManageEnforcement,
+      ensureCanManageSettings,
+    });
+  }
 
   registerBrandingRoutes({
     app,

@@ -1,5 +1,5 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, ShieldAlert, Gavel, Bell, X, Sun, Moon, Monitor, ArrowUpCircle, BarChart3, Menu, PanelLeftClose, Settings as SettingsIcon, LogOut, RefreshCw, ChevronDown, Boxes } from "lucide-react";
+import { LayoutDashboard, ShieldAlert, Gavel, Bell, X, Sun, Moon, Monitor, ArrowUpCircle, BarChart3, Menu, PanelLeftClose, Settings as SettingsIcon, LogOut, RefreshCw, ChevronDown, Boxes, Server } from "lucide-react";
 import { Badge } from "./ui/Badge";
 import { useAuth } from "../contexts/AuthContext";
 import { useNotificationUnreadCount } from "../contexts/useNotificationUnreadCount";
@@ -87,6 +87,7 @@ export function Sidebar({ isOpen, onClose, onToggle, theme, setTheme }: SidebarP
     const { formatTime } = useDateTime();
     const [updateStatus, setUpdateStatus] = useState<UpdateCheckResponse | null>(null);
     const [showMetricsNav, setShowMetricsNav] = useState(false);
+    const [showFleetNav, setShowFleetNav] = useState(false);
     const [loadTestProfile, setLoadTestProfile] = useState<string | null>(null);
     const [manualRefreshEnabled, setManualRefreshEnabled] = useState(false);
     const [refreshMenuOpen, setRefreshMenuOpen] = useState(false);
@@ -161,6 +162,7 @@ export function Sidebar({ isOpen, onClose, onToggle, theme, setTheme }: SidebarP
         { to: "/decisions", label: "components.sidebar.nav.decisions", icon: Gavel },
         { to: "/notifications", label: "components.sidebar.nav.notifications", icon: Bell },
         ...(showMetricsNav ? [{ to: "/metrics", label: "components.sidebar.nav.metrics", icon: BarChart3 }] : []),
+        ...(showFleetNav ? [{ to: "/fleet", label: "components.sidebar.nav.fleet", icon: Server }] : []),
         { to: "/settings", label: "components.sidebar.nav.settings", icon: SettingsIcon },
     ];
 
@@ -204,6 +206,7 @@ export function Sidebar({ isOpen, onClose, onToggle, theme, setTheme }: SidebarP
                 const config = await fetchConfig();
                 if (!cancelled) {
                     setShowMetricsNav(config.metrics_sidebar_visible !== false);
+                    setShowFleetNav(config.fleet_enabled === true);
                     setManualRefreshEnabled(config.manual_refresh_enabled === true);
                     if (config.manual_refresh_enabled !== true) {
                         setRefreshMenuOpen(false);

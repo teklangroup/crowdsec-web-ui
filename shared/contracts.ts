@@ -592,6 +592,7 @@ export interface ConfigResponse {
   date_format?: string;
   metrics_enabled?: boolean;
   metrics_sidebar_visible?: boolean;
+  fleet_enabled?: boolean;
   manual_decision_scenario_settings?: ManualDecisionScenarioSettings;
   deployment_mode?: 'load-test';
   load_test_profile?: string;

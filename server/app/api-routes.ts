@@ -664,6 +664,7 @@ app.get(`${config.basePath}/api/config`, ensureAuth, (context) => {
     date_format: config.dateFormat,
     metrics_enabled: config.instances.some((instance) => instance.prometheus.length > 0),
     metrics_sidebar_visible: state.metricsSidebarVisible,
+    fleet_enabled: config.fleetEnabled,
     manual_decision_scenario_settings: {
       configured: configuredManualDecisionScenarios(),
       custom: [...state.manualDecisionScenarios],

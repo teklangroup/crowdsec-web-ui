@@ -2764,6 +2764,43 @@ function initSchema(db: Database, freshDatabase: boolean): boolean {
       ) WHERE position > ${RECENT_FILTER_LIMIT}
     );
   `);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS fleet_hosts (
+      id TEXT PRIMARY KEY,
+      hostname TEXT NOT NULL,
+      tags TEXT NOT NULL DEFAULT '[]',
+      instance_id TEXT,
+      key_hash TEXT NOT NULL UNIQUE,
+      enrolled_at TEXT NOT NULL,
+      last_seen_at TEXT,
+      remote_addr TEXT,
+      agent_version TEXT,
+      interval_seconds INTEGER NOT NULL DEFAULT 15,
+      snapshot TEXT,
+      snapshot_at TEXT
+    );
+    CREATE TABLE IF NOT EXISTS fleet_commands (
+      id TEXT PRIMARY KEY,
+      action TEXT NOT NULL,
+      params TEXT NOT NULL DEFAULT '{}',
+      targets TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL,
+      created_by TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_fleet_commands_created
+      ON fleet_commands(created_at DESC);
+    CREATE TABLE IF NOT EXISTS fleet_command_hosts (
+      command_id TEXT NOT NULL,
+      host_id TEXT NOT NULL,
+      hostname TEXT NOT NULL,
+      state TEXT NOT NULL,
+      output TEXT,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY(command_id, host_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_fleet_command_hosts_host_state
+      ON fleet_command_hosts(host_id, state);
+  `);
   db.exec(createWebAuthnCredentialsTable);
   db.exec(createNotificationChannelsTable);
   db.exec(createNotificationRulesTable);
